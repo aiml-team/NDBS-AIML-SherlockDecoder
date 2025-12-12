@@ -2,9 +2,9 @@ import base64
 import os
 import tempfile
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import FileResponse
 from pydantic import BaseModel
 import uvicorn
+import requests
 
 
 app = FastAPI()
@@ -16,7 +16,6 @@ app = FastAPI()
 class FileData(BaseModel):
     filename: str    # dynamic from Get file metadata
     filecontent: str    # Base64 from Power Automate
-
 
 
 # -------------------------------
@@ -39,7 +38,7 @@ async def decode_docx(data: FileData):
         base_name = os.path.splitext(data.filename)[0]
         output_filename = f"{base_name}_output.docx"
 
-        # 4. Save file in OS temp folder (auto cleaned)
+        # 4. Save file temporarily
         temp_dir = tempfile.gettempdir()
         save_path = os.path.join(temp_dir, output_filename)
 
@@ -48,16 +47,28 @@ async def decode_docx(data: FileData):
 
         print(f"Saved decoded file at: {save_path}")
 
-        # 5. Return file to Power Automate
-        return FileResponse(
-            save_path,
-            media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-            filename=output_filename
-        )
+        # ----------------------------------------------------
+        # 5. Send the actual file to your other endpoint
+        # ----------------------------------------------------
+        with open(save_path, "rb") as f:
+            files = {
+                "file": (output_filename, f, "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+            }
+
+            response = requests.post(
+                "https://sherlockaiserver-h4gfb8gbbrgvfhn.westeurope-01.azurewebsites.net/process-docx-upload",
+                files=files
+            )
+
+        return {
+            "status": "sent",
+            "file": output_filename,
+            "endpoint_status": response.status_code,
+            "endpoint_response": response.text
+        }
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error decoding file: {str(e)}")
-
 
 
 # -------------------------------
