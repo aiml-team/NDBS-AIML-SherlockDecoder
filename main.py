@@ -27,7 +27,8 @@ async def decode_doc(payload: ConnectorPayload):
         b64_string = b64_string.split(",")[1]
 
     # 3. Decode Base64 → Recreate file
-    file_bytes = base64.b64decode(b64_string)
+    # file_bytes = base64.b64decode(b64_string)
+    file_bytes = base64.b64decode(b64_string.encode("utf-8"))
 
     # Determine output filename
     safe_name = payload.fileName or f"decoded_{uuid.uuid4()}.doc"
