@@ -40,7 +40,8 @@ async def decode_doc(payload: ConnectorPayload):
     return FileResponse(
         path=output_path,
         filename=safe_name,
-        media_type="application/msword"
+    #     media_type="application/msword"
+        media_type= "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
     )
 
 # -------------------------------
